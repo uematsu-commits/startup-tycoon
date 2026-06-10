@@ -246,8 +246,33 @@ let selInd = null, selCard = null;
 let shareText = '';
 const GAME_URL = 'https://startup-tycoon-alpha.vercel.app';
 
+// ===== 匿名プレイ計測（個人情報は送信しない） =====
+const SB_URL = 'https://fdgyloydctrcwpompaoq.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkZ3lsb3lkY3RyY3dwb21wYW9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MjEzNjgsImV4cCI6MjA5NjI5NzM2OH0.-gll2CAGLVcx3bco2zRA6BnXg4Jf9EiZ1FXbl_DOfFI';
+let sessionId = '', playStart = 0;
+const playerId = (()=>{ try{
+  let v = localStorage.getItem('tycoon_pid');
+  if(!v){ v = crypto.randomUUID(); localStorage.setItem('tycoon_pid', v); }
+  return v;
+}catch(e){ return 'anon'; } })();
+function track(event, data={}){
+  if(!sessionId) return;
+  try{
+    fetch(SB_URL + '/rest/v1/tycoon_events', {
+      method:'POST', keepalive:true,
+      headers:{'Content-Type':'application/json', apikey:SB_KEY, Authorization:'Bearer '+SB_KEY},
+      body: JSON.stringify({player_id:playerId, session_id:sessionId, event, data}),
+    }).catch(()=>{});
+  }catch(e){}
+}
+window.addEventListener('pagehide', ()=>{
+  if(S && !S.ended) track('abandon', {m:S.month, dur:Math.round((Date.now()-playStart)/1000)});
+});
+
 function newGame(ind){
   toastLog = [];
+  sessionId = crypto.randomUUID();
+  playStart = Date.now();
   S = {
     ind: {...ind},
     month: 1,
@@ -269,6 +294,7 @@ function newGame(ind){
     log: [],
   };
   S.mrr = revenue();
+  track('start', {ind: ind.id});
 }
 
 const STAGE_NAMES = ['未調達','シード','シリーズA','シリーズB','シリーズC'];
@@ -480,6 +506,7 @@ function openFunding(){
       S.equity *= (1 - x.dil);
       S.stage++;
       x.perk.f(S);
+      track('fund', {stage:S.stage, m:S.month});
       toastLog.push(`<b>${STAGE_NAMES[S.stage]}ラウンド完了！</b> ${fmt(x.amount)}調達（持株 ${(S.equity*100).toFixed(1)}%に）`);
       showModal('🎉 調達成功！', `<p>${x.vc}から${fmt(x.amount)}を調達した。<br>あなたの持株比率: <b>${(S.equity*100).toFixed(1)}%</b></p>`, [{t:'OK', f:()=>{closeModal(); render();}}]);
     };
@@ -504,8 +531,8 @@ function offerMA(){
     提示額: <b style="font-size:20px;color:var(--yellow)">${fmt(price)}</b><br>
     （現在の評価額 ${fmt(val)} の ${mult.toFixed(2)}倍）<br><br>
     あなたの取り分: <b class="up">${fmt(price*S.equity)}</b>（持株 ${(S.equity*100).toFixed(1)}%）</p>`, [
-    {t:'売却する（イグジット！）', f:()=>{ closeModal(); gameOver('ma', price, buyer); }},
-    {t:'断って成長を続ける', f:()=>{ S.buzz += 5; toastLog.push(`${buyer}の買収提案を蹴った。市場がざわつく（バズ+）`); closeModal(); startMonth(); }, sub:true},
+    {t:'売却する（イグジット！）', f:()=>{ track('ma_offer', {m:S.month, accepted:true}); closeModal(); gameOver('ma', price, buyer); }},
+    {t:'断って成長を続ける', f:()=>{ track('ma_offer', {m:S.month, accepted:false}); S.buzz += 5; toastLog.push(`${buyer}の買収提案を蹴った。市場がざわつく（バズ+）`); closeModal(); startMonth(); }, sub:true},
   ]);
 }
 
@@ -528,7 +555,7 @@ function openIPO(){
     <div class="log">${reqs.map(r=>(r.ok?'✅ ':'❌ ')+r.t).join('<br>')}</div>
     <p style="margin-top:10px">準備中は毎月300万円の追加コスト。途中で不祥事が起きると延期されることも…</p>`;
   showModal('📈 IPO準備', body, allOk
-    ? [{t:'IPO準備を開始する！', f:()=>{ S.ipoPrep = 12; closeModal(); render(); }}, {t:'まだ早い', f:closeModal, sub:true}]
+    ? [{t:'IPO準備を開始する！', f:()=>{ S.ipoPrep = 12; track('ipo_start', {m:S.month}); closeModal(); render(); }}, {t:'まだ早い', f:closeModal, sub:true}]
     : [{t:'閉じる', f:closeModal}]);
 }
 function doIPO(){
@@ -575,6 +602,7 @@ function gameOver(type, price=0, buyer=''){
     shareText = `🏢 『スタートアップ・タイクーン』でイグジットならず10年経過。老舗ベンチャーとして生きていく…`;
   }
   shareText += `\n${GAME_URL}`;
+  track('end', {type, m:S.month, dur:Math.round((Date.now()-playStart)/1000), score:Math.round(my), rank});
   drawChart();
 }
 
