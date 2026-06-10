@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>説明書 | スタートアップ・タイクーン</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#1a2233; --panel2:#222c42; --line:#2e3a55;
+    --txt:#e8edf7; --sub:#8fa0bf; --accent:#4f8cff; --green:#3ddc84;
+    --red:#ff5d6c; --yellow:#ffd166; --purple:#b388ff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--txt); font-family:"Hiragino Sans","Noto Sans JP",sans-serif; line-height:1.8;}
+  #app{max-width:560px; margin:0 auto; padding:16px 16px 60px;}
+  h1{font-size:22px; text-align:center; margin:20px 0 4px;}
+  .tagline{text-align:center; color:var(--sub); font-size:13px; margin-bottom:20px;}
+  h2{font-size:17px; margin:26px 0 10px; padding-left:10px; border-left:4px solid var(--accent);}
+  h3{font-size:14px; margin:14px 0 6px; color:var(--yellow);}
+  p, li{font-size:14px; color:var(--txt);}
+  ul{padding-left:20px; margin-bottom:8px;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:12px;}
+  .sub{color:var(--sub); font-size:13px;}
+  table{width:100%; border-collapse:collapse; font-size:13px; margin:8px 0;}
+  th,td{border:1px solid var(--line); padding:7px 9px; text-align:left;}
+  th{background:var(--panel2); color:var(--sub); font-weight:600;}
+  .good{color:var(--green);} .bad{color:var(--red);} .warn{color:var(--yellow);} .pur{color:var(--purple);}
+  .nav{display:flex; gap:8px; margin:18px 0;}
+  .nav a{flex:1; display:block; text-align:center; padding:11px; border-radius:12px; text-decoration:none;
+    background:var(--panel2); color:var(--txt); border:1px solid var(--line); font-size:14px; font-weight:600;}
+  .nav a.main{background:var(--accent); color:#fff; border:none;}
+  b{color:var(--yellow);}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>📖 説明書</h1>
+  <p class="tagline">スタートアップ・タイクーン 公式マニュアル</p>
+  <div class="nav">
+    <a class="main" href="./">▶ ゲームをプレイ</a>
+    <a href="guide.html">📕 攻略本</a>
+  </div>
+
+  <h2>ゲームの目的</h2>
+  <div class="panel">
+    <p>あなたは起業家。会社を成長させて <b>IPO（上場）</b> または <b>M&A（売却）</b> でのイグジットを目指します。</p>
+    <ul>
+      <li>最終スコア = <b>イグジット額 × あなたの持株比率</b></li>
+      <li>キャッシュが尽きたら<span class="bad">倒産（ゲームオーバー）</span></li>
+      <li>10年（120ヶ月）以内にイグジットできないと時間切れ</li>
+    </ul>
+  </div>
+
+  <h2>ゲームの流れ</h2>
+  <div class="panel">
+    <p>1ターン = 1ヶ月。毎月次の3つを決めて「▶ 次の月へ」を押します。</p>
+    <h3>① 施策カード（3枚から1枚選択）</h3>
+    <p class="sub">展示会出展、監査法人と契約、値上げなど。選ばずに進めてもOK。費用がかかるカードもあります。</p>
+    <h3>② 予算配分（10ポイント）</h3>
+    <table>
+      <tr><th>項目</th><th>効果</th></tr>
+      <tr><td>🛠 開発</td><td>プロダクト品質が上がる。<span class="bad">投資をサボると技術的負債で品質が下がり、解約が増える</span></td></tr>
+      <tr><td>📣 営業・マーケ</td><td>新規顧客を獲得して売上を伸ばす</td></tr>
+      <tr><td>🧑‍💼 採用</td><td>社員が増える。社員が多いほど開発・営業の効果が増幅されるが、<span class="warn">毎月の人件費も増える</span></td></tr>
+      <tr><td>🏛 管理部門</td><td>信用とモラールを保つ。<b>IPOには信用度が必須</b></td></tr>
+    </table>
+    <p class="sub">※ 1ポイントごとに費用が発生します。ポイントを使わなければその分支出は減ります（守りの経営）。</p>
+    <h3>③ イベント対応</h3>
+    <p class="sub">ランダムで「競合参入」「エース社員の退職相談」などのイベントが発生。選択肢で対応します。</p>
+  </div>
+
+  <h2>画面の見方</h2>
+  <div class="panel">
+    <table>
+      <tr><th>表示</th><th>意味</th></tr>
+      <tr><td>キャッシュ</td><td>手元資金。<span class="bad">0未満になると倒産の危機</span></td></tr>
+      <tr><td>月次売上</td><td>顧客数 × 客単価 × 利益率で決まる毎月の収入</td></tr>
+      <tr><td>月次支出</td><td>固定費 + 人件費 + 予算配分の費用（バーンレート）</td></tr>
+      <tr><td>評価額</td><td>会社の値段。調達条件と売却額のベースになる</td></tr>
+      <tr><td>持株比率</td><td>あなたの持ち分。<span class="warn">調達のたびに減る</span>。スコアに直結</td></tr>
+      <tr><td>ランウェイ</td><td>今のペースであと何ヶ月生きられるか。<span class="bad">4ヶ月を切ったら赤信号</span></td></tr>
+    </table>
+    <h3>5つの内部ステータス</h3>
+    <table>
+      <tr><th>ステータス</th><th>効果</th></tr>
+      <tr><td><span style="color:#4f8cff">品質</span></td><td>高いと顧客が増えやすく解約されにくい。低いと逆</td></tr>
+      <tr><td><span class="good">モラール</span></td><td>低下すると社員が退職してしまう</td></tr>
+      <tr><td><span class="warn">バズ</span>（知名度）</td><td>顧客獲得・調達条件・M&Aオファーに影響。<span class="sub">毎月少しずつ減衰する</span></td></tr>
+      <tr><td><span class="pur">信用</span></td><td>IPOの必須条件（60以上）。管理部門への投資と監査で上がる</td></tr>
+      <tr><td><span class="bad">IPO</span></td><td>IPO準備の進捗ゲージ</td></tr>
+    </table>
+  </div>
+
+  <h2>資金調達 🏦</h2>
+  <div class="panel">
+    <p>「資金調達」ボタンでVC（ベンチャーキャピタル）から出資を受けられます。</p>
+    <ul>
+      <li>ラウンドは <b>シード → シリーズA → B → C</b> の順。各ラウンドには最低評価額が必要</li>
+      <li>VC2社が「調達額・希薄化率・特典」を提示。比較して選ぶ</li>
+      <li>調達すると <span class="bad">持株比率が下がる</span>（希薄化）</li>
+      <li>成長率がマイナスだと断られる。<span class="warn">不況時は条件が悪化</span></li>
+    </ul>
+    <p class="sub">💡 倒産寸前のとき、調達済みなら1回だけ「緊急ブリッジ調達」で救済されます（持株25%減）。</p>
+  </div>
+
+  <h2>イグジット（ゲームクリア）</h2>
+  <div class="panel">
+    <h3>🤝 M&A（売却）</h3>
+    <p class="sub">知名度と売上が育つと、大手企業から買収オファーがランダムに届きます。提示額は評価額の0.7〜1.5倍。受ければその場でクリア、断れば経営続行（知名度が少し上がる）。</p>
+    <h3>🔔 IPO（上場）</h3>
+    <p class="sub">条件をすべて満たすと「IPO準備」を開始できます。</p>
+    <ul>
+      <li>年間売上 3億円以上</li>
+      <li>信用度 60以上</li>
+      <li>月次成長率 +2%超 または 黒字</li>
+      <li>シリーズA以降の調達実績</li>
+    </ul>
+    <p class="sub">準備期間は12ヶ月。毎月300万円の追加コストがかかり、まれに不祥事で延期されます。完了すると評価額の1.1〜1.6倍 × 市況補正で上場！</p>
+  </div>
+
+  <h2>市況 ☀️⛅🌧</h2>
+  <div class="panel">
+    <p>画面右上に表示。数ヶ月ごとに <b>好況 / 普通 / 不況</b> が入れ替わり、評価額と顧客獲得に大きく影響します（好況 ×1.4 / 不況 ×0.6）。<span class="warn">調達とイグジットは好況時が有利。</span></p>
+  </div>
+
+  <h2>ランク一覧</h2>
+  <div class="panel">
+    <table>
+      <tr><th>ランク</th><th>あなたの取り分</th></tr>
+      <tr><td>🦄 ユニコーン級</td><td>10億円以上</td></tr>
+      <tr><td>👑 メガベンチャー</td><td>3億円以上</td></tr>
+      <tr><td>🏆 グッドイグジット</td><td>1億円以上</td></tr>
+      <tr><td>✨ スモールイグジット</td><td>3,000万円以上</td></tr>
+      <tr><td>🌱 マイクロイグジット</td><td>3,000万円未満</td></tr>
+    </table>
+  </div>
+
+  <div class="nav">
+    <a class="main" href="./">▶ ゲームをプレイ</a>
+    <a href="guide.html">📕 攻略本を読む</a>
+  </div>
+</div>
+</body>
+</html>
