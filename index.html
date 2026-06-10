@@ -148,6 +148,10 @@
     <div id="resultScore"></div>
     <div class="panel"><canvas id="chart" width="480" height="200"></canvas></div>
     <div class="panel"><div class="log" id="resultLog"></div></div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn sub" id="btnShareX">𝕏 でシェア</button>
+      <button class="btn sub" id="btnShareCopy">📋 結果をコピー</button>
+    </div>
     <button class="btn" onclick="location.reload()">もう一度プレイ</button>
   </div>
 </div>
@@ -239,6 +243,8 @@ const EVENTS = [
 let S = null;          // state
 let toastLog = [];     // 月内に発生したログ
 let selInd = null, selCard = null;
+let shareText = '';
+const GAME_URL = 'https://startup-tycoon-alpha.vercel.app';
 
 function newGame(ind){
   toastLog = [];
@@ -558,6 +564,17 @@ function gameOver(type, price=0, buyer=''){
   $('#resultRank').textContent = rank;
   $('#resultScore').textContent = scoreTxt;
   $('#resultLog').innerHTML = log;
+  // シェア文面
+  if(type==='ipo'){
+    shareText = `🔔 IPO達成！『スタートアップ・タイクーン』で時価総額${fmt(price)}で上場しました！\n取り分${fmt(my)}で ${rank} 🎉（創業${years}年${months}ヶ月・${S.ind.nm}）`;
+  } else if(type==='ma'){
+    shareText = `🤝 M&A成立！『スタートアップ・タイクーン』で会社を${fmt(price)}で売却！\n取り分${fmt(my)}で ${rank} 🎉（創業${years}年${months}ヶ月・${S.ind.nm}）`;
+  } else if(type==='bankrupt'){
+    shareText = `💸 『スタートアップ・タイクーン』で${years}年${months}ヶ月の挑戦むなしく倒産…。次こそイグジットする！`;
+  } else {
+    shareText = `🏢 『スタートアップ・タイクーン』でイグジットならず10年経過。老舗ベンチャーとして生きていく…`;
+  }
+  shareText += `\n${GAME_URL}`;
   drawChart();
 }
 
@@ -659,6 +676,21 @@ $('#btnNext').onclick = ()=>{
 };
 $('#btnFund').onclick = openFunding;
 $('#btnIPO').onclick = openIPO;
+$('#btnShareX').onclick = ()=>{
+  window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText), '_blank');
+};
+$('#btnShareCopy').onclick = async ()=>{
+  // モバイルではOSのシェアシートを優先
+  if(navigator.share){
+    try{ await navigator.share({text: shareText}); return; }catch(e){ if(e.name==='AbortError') return; }
+  }
+  try{
+    await navigator.clipboard.writeText(shareText);
+    $('#btnShareCopy').textContent = '✅ コピーしました';
+  }catch(e){
+    prompt('以下をコピーしてください', shareText);
+  }
+};
 </script>
 </body>
 </html>
