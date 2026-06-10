@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>スタートアップ・タイクーン</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#1a2233; --panel2:#222c42; --line:#2e3a55;
+    --txt:#e8edf7; --sub:#8fa0bf; --accent:#4f8cff; --green:#3ddc84;
+    --red:#ff5d6c; --yellow:#ffd166; --purple:#b388ff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg); color:var(--txt); font-family:"Hiragino Sans","Noto Sans JP",sans-serif; min-height:100vh;}
+  #app{max-width:520px; margin:0 auto; padding:12px 12px 90px;}
+  h1{font-size:22px; text-align:center; margin:24px 0 6px; letter-spacing:1px;}
+  h2{font-size:15px; margin:14px 0 8px; color:var(--sub); font-weight:600;}
+  .screen{display:none;} .screen.active{display:block;}
+  .btn{display:block; width:100%; padding:13px; border:none; border-radius:12px;
+    background:var(--accent); color:#fff; font-size:16px; font-weight:700; cursor:pointer; margin-top:10px;}
+  .btn:active{transform:scale(.98);}
+  .btn.sub{background:var(--panel2); color:var(--txt); border:1px solid var(--line); font-weight:600;}
+  .btn.green{background:var(--green); color:#06301a;}
+  .btn.red{background:var(--red);}
+  .btn:disabled{opacity:.35; cursor:default;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px; margin-bottom:10px;}
+  .tagline{text-align:center; color:var(--sub); font-size:13px; margin-bottom:20px;}
+
+  /* タイトル: 業種カード */
+  .ind{display:flex; gap:10px; align-items:center; padding:14px; background:var(--panel); border:2px solid var(--line);
+    border-radius:14px; margin-bottom:10px; cursor:pointer;}
+  .ind.sel{border-color:var(--accent); background:var(--panel2);}
+  .ind .ic{font-size:28px;} .ind .nm{font-weight:700; font-size:16px;} .ind .ds{font-size:12px; color:var(--sub); margin-top:2px;}
+
+  /* KPIダッシュボード */
+  #kpi{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:10px;}
+  .kcell{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px 6px; text-align:center;}
+  .kcell .l{font-size:10px; color:var(--sub);} .kcell .v{font-size:14px; font-weight:700; margin-top:2px;}
+  .v.good{color:var(--green);} .v.bad{color:var(--red);} .v.warn{color:var(--yellow);}
+  #topbar{display:flex; justify-content:space-between; align-items:center; margin:6px 0 8px;}
+  #monthLabel{font-size:15px; font-weight:700;}
+  #marketBadge{font-size:12px; padding:4px 10px; border-radius:99px; border:1px solid var(--line);}
+
+  /* 内部値ミニバー */
+  .stats{display:grid; grid-template-columns:repeat(5,1fr); gap:6px;}
+  .stat{text-align:center;}
+  .stat .sl{font-size:10px; color:var(--sub); margin-bottom:3px;}
+  .bar{height:6px; background:#0c1018; border-radius:4px; overflow:hidden;}
+  .bar i{display:block; height:100%; border-radius:4px; background:var(--accent); transition:width .4s;}
+
+  /* 施策カード */
+  .card{background:var(--panel2); border:2px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px; cursor:pointer;}
+  .card.sel{border-color:var(--yellow);}
+  .card .cn{font-weight:700; font-size:14px;}
+  .card .ce{font-size:12px; color:var(--sub); margin-top:3px;}
+  .card .cc{font-size:12px; color:var(--yellow); margin-top:2px;}
+
+  /* 予算配分 */
+  .alloc{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .alloc .an{flex:1; font-size:14px;}
+  .alloc .an small{display:block; color:var(--sub); font-size:10px;}
+  .alloc button{width:38px; height:38px; border-radius:10px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--txt); font-size:20px; cursor:pointer;}
+  .alloc .pv{width:28px; text-align:center; font-weight:700; font-size:16px;}
+  #ptsLeft{font-size:13px; color:var(--yellow); text-align:right; margin-bottom:6px;}
+
+  /* アクションボタン群 */
+  #actions{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px;}
+  #actions .btn{margin-top:0; font-size:14px; padding:11px;}
+
+  /* 固定フッター */
+  #footer{position:fixed; bottom:0; left:0; right:0; padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    background:linear-gradient(transparent, var(--bg) 30%); max-width:520px; margin:0 auto;}
+  #footer .btn{margin-top:0;}
+
+  /* モーダル */
+  #overlay{position:fixed; inset:0; background:rgba(5,8,15,.75); display:none; align-items:flex-end; justify-content:center; z-index:50;}
+  #overlay.show{display:flex;}
+  #modal{background:var(--panel); border:1px solid var(--line); border-radius:18px 18px 0 0; padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+    width:100%; max-width:520px; max-height:82vh; overflow-y:auto;}
+  #modal h3{font-size:17px; margin-bottom:8px;}
+  #modal p{font-size:14px; color:var(--sub); line-height:1.6; margin-bottom:10px;}
+  .log{font-size:13px; line-height:1.7; color:var(--sub);}
+  .log b{color:var(--txt);}
+  .log .up{color:var(--green);} .log .dn{color:var(--red);}
+
+  /* リザルト */
+  #resultRank{font-size:30px; font-weight:800; text-align:center; margin:10px 0;}
+  #resultScore{font-size:22px; text-align:center; color:var(--yellow); font-weight:700; margin-bottom:12px;}
+  canvas{width:100%; border-radius:10px; background:#0c1018;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- タイトル -->
+  <div id="scrTitle" class="screen active">
+    <h1>🚀 スタートアップ・タイクーン</h1>
+    <p class="tagline">起業して、IPO か M&A でのイグジットを目指せ！</p>
+    <h2>業種を選択</h2>
+    <div id="indList"></div>
+    <button class="btn" id="btnStart" disabled>起業する</button>
+    <div class="panel" style="margin-top:14px">
+      <div class="log">
+        <b>遊び方</b><br>
+        1ターン＝1ヶ月。毎月「予算配分」と「施策カード」を決めて経営する。<br>
+        ・資金が尽きたら<span class="dn">倒産</span><br>
+        ・<b>イグジット額 × 自分の持株比率</b> が最終スコア<br>
+        ・調達すれば成長は速いが、持株が薄まる。売り時を見極めろ！
+      </div>
+    </div>
+  </div>
+
+  <!-- メイン -->
+  <div id="scrMain" class="screen">
+    <div id="topbar">
+      <span id="monthLabel"></span>
+      <span id="marketBadge"></span>
+    </div>
+    <div id="kpi"></div>
+    <div class="panel"><div class="stats" id="stats"></div></div>
+
+    <h2>📋 今月の施策（1つ選択）</h2>
+    <div id="cards"></div>
+
+    <h2>💰 予算配分 <span style="font-weight:400">（1pt = <span id="ptCost"></span>）</span></h2>
+    <div class="panel">
+      <div id="ptsLeft"></div>
+      <div id="allocs"></div>
+    </div>
+
+    <div id="actions">
+      <button class="btn sub" id="btnFund">🏦 資金調達</button>
+      <button class="btn sub" id="btnIPO">📈 IPO準備</button>
+    </div>
+
+    <div id="footer"><button class="btn green" id="btnNext">▶ 次の月へ</button></div>
+  </div>
+
+  <!-- リザルト -->
+  <div id="scrResult" class="screen">
+    <h1 id="resultTitle"></h1>
+    <div id="resultRank"></div>
+    <div id="resultScore"></div>
+    <div class="panel"><canvas id="chart" width="480" height="200"></canvas></div>
+    <div class="panel"><div class="log" id="resultLog"></div></div>
+    <button class="btn" onclick="location.reload()">もう一度プレイ</button>
+  </div>
+</div>
+
+<!-- モーダル -->
+<div id="overlay"><div id="modal"></div></div>
+
+<script>
+'use strict';
+// ============ ユーティリティ ============
+const $ = s => document.querySelector(s);
+const rnd = (a,b) => a + Math.random()*(b-a);
+const ri  = (a,b) => Math.floor(rnd(a,b+1));
+const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+// 金額は「万円」単位で保持
+function fmt(man){
+  const neg = man<0 ? '-' : ''; man = Math.abs(Math.round(man));
+  if(man >= 10000) return neg + (man/10000).toFixed(man>=100000?0:1) + '億円';
+  return neg + man.toLocaleString() + '万円';
+}
+
+// ============ 業種定義 ============
+const INDUSTRIES = [
+  {id:'saas', ic:'☁️', nm:'SaaS',  ds:'安定成長・解約率低め・マルチプル高',  arpu:5, margin:.85, multiple:8,  churn:.015, growth:1.0},
+  {id:'ai',   ic:'🤖', nm:'AI',    ds:'高単価・高バーン・市況の影響が大きい', arpu:9, margin:.75, multiple:13, churn:.025, growth:1.15},
+  {id:'ec',   ic:'🛒', nm:'EC',    ds:'顧客は増えやすいが利益率・評価は低め', arpu:2.5, margin:.45, multiple:3.5, churn:.03, growth:1.3},
+  {id:'game', ic:'🎮', nm:'ゲーム', ds:'バズ依存のハイリスク・ハイリターン',   arpu:1.5, margin:.7, multiple:6, churn:.05, growth:1.5},
+];
+
+// ============ 施策カード ============
+// eff: 月末計算前に適用される効果
+const CARD_POOL = [
+  {nm:'大型展示会に出展', cost:300, ce:'知名度が大きく上がる', eff:s=>{s.buzz+=18;}},
+  {nm:'プレスリリース配信', cost:50, ce:'知名度が少し上がる', eff:s=>{s.buzz+=8;}},
+  {nm:'リファラル採用キャンペーン', cost:150, ce:'社員+1〜2人・モラール上昇', eff:s=>{hire(ri(1,2)); s.morale+=5;}},
+  {nm:'技術的負債の返済週間', cost:0, ce:'品質+10 / 今月の新規顧客は減る', eff:s=>{s.quality+=10; s.tmpSalesMod=.5;}},
+  {nm:'価格改定（値上げ）', cost:0, ce:'客単価+15% / 解約率が一時悪化', eff:s=>{s.arpu*=1.15; s.tmpChurnAdd=.02;}},
+  {nm:'無料キャンペーン', cost:200, ce:'新規顧客が大幅増 / 今月の売上減', eff:s=>{s.tmpSalesMod=2.2; s.tmpRevMod=.6;}},
+  {nm:'社員旅行・全社合宿', cost:120, ce:'モラール大幅回復', eff:s=>{s.morale+=15;}},
+  {nm:'監査法人と契約', cost:250, ce:'信用度+12（IPOに必須）', eff:s=>{s.trust+=12;}},
+  {nm:'インフルエンサー起用', cost:180, ce:'バズ+12 / 失敗すると炎上(20%)', eff:s=>{ if(Math.random()<.2){s.buzz-=10; s.morale-=5; toastLog.push('インフルエンサー施策が炎上…');} else s.buzz+=12; }},
+  {nm:'大手企業と提携交渉', cost:100, ce:'成功(50%)で顧客+大・信用+', eff:s=>{ if(Math.random()<.5){s.customers+=Math.max(10,Math.round(s.customers*.15)); s.trust+=6; toastLog.push('提携成立！顧客が流入');} else toastLog.push('提携交渉は不調に終わった'); }},
+  {nm:'何もしない（守りの月）', cost:0, ce:'コスト節約。固定費10%減', eff:s=>{s.tmpCostMod=.9;}},
+  {nm:'海外展開の調査', cost:200, ce:'評価マルチプル+0.5（恒久）', eff:s=>{s.ind.multiple+=.5;}},
+];
+
+// ============ ランダムイベント ============
+const EVENTS = [
+  {nm:'大手競合が参入！', ds:'同じ市場に大手企業が参入してきた。どう動く？', ch:[
+    {t:'差別化に投資する（-300万）', f:s=>{s.cash-=300; s.quality+=8; return '品質で差別化。プロダクト品質が上がった';}},
+    {t:'価格で対抗する', f:s=>{s.arpu*=.85; s.tmpSalesMod=1.4; return '値下げで顧客は増えるが単価が下がった';}},
+    {t:'様子を見る', f:s=>{s.customers=Math.round(s.customers*.92); return '一部の顧客が競合に流れた…';}},
+  ]},
+  {nm:'エース社員の退職相談', ds:'主力エンジニアが「他社からオファーが…」と相談に来た。', ch:[
+    {t:'給与を上げて引き留める（バーン増）', f:s=>{s.salary*=1.08; s.morale+=5; return '引き留め成功。ただし人件費が上がった';}},
+    {t:'快く送り出す', f:s=>{if(s.emp.eng>0)s.emp.eng--; s.quality-=6; s.morale+=3; return 'エースは去ったが、円満退社で社内の雰囲気は良い';}},
+  ]},
+  {nm:'大口顧客からカスタム開発の要求', ds:'売上の大きい顧客が専用機能を要求してきた。', ch:[
+    {t:'受ける（+800万 / 品質-8）', f:s=>{s.cash+=800; s.quality-=8; return '一時金は入ったが、プロダクトが複雑化した';}},
+    {t:'断る', f:s=>{ if(Math.random()<.4){s.customers=Math.round(s.customers*.95); return '顧客の一部が離れてしまった…';} return 'プロダクトの一貫性を守った。長期的には正解かも';}},
+  ]},
+  {nm:'メディアから取材依頼！', ds:'有名経済メディアから特集取材の依頼が来た。', ch:[
+    {t:'受ける', f:s=>{ if(Math.random()<.75){s.buzz+=15; return '特集記事が話題に！知名度が大きく上がった';} s.buzz-=5; return '記事の論調が批判的だった…';}},
+    {t:'今は断る', f:s=>'静かにプロダクトに集中した'},
+  ]},
+  {nm:'サーバー障害発生！', ds:'深夜に大規模障害。顧客から苦情が殺到している。', ch:[
+    {t:'徹夜で全員対応（モラール-）', f:s=>{s.morale-=8; s.trust+=3; return '迅速な対応で信頼はむしろ向上。チームは疲弊…';}},
+    {t:'外部業者に依頼（-200万）', f:s=>{s.cash-=200; return '金で解決。チームは温存できた';}},
+  ]},
+  {nm:'著名VCがSNSで言及', ds:'有名投資家があなたの会社を「注目株」と紹介した。', ch:[
+    {t:'やったね！', f:s=>{s.buzz+=12; return '知名度が上昇し、調達条件も良くなりそうだ';}},
+  ]},
+  {nm:'採用した社員が経歴詐称', ds:'先月採用した社員の経歴が虚偽だと判明した。', ch:[
+    {t:'即解雇し、採用フローを見直す', f:s=>{s.trust+=4; s.morale-=4; return '対応は適切だったが、社内に動揺が走った';}},
+    {t:'実力はあるので黙認', f:s=>{ if(Math.random()<.3){s.trust-=12; s.buzz-=8; return '後日リークされ炎上！信用が大きく低下…';} return '何事もなく済んだ…今のところは';}},
+  ]},
+  {nm:'助成金の採択通知', ds:'申請していた助成金が採択された！', ch:[
+    {t:'ありがたい！', f:s=>{const g=ri(300,800); s.cash+=g; return `${fmt(g)}が入金された`;}},
+  ]},
+  {nm:'チームの衝突', ds:'開発と営業が「仕様変更」を巡って対立している。', ch:[
+    {t:'開発の肩を持つ', f:s=>{s.quality+=5; s.tmpSalesMod=.8; return '品質は守られたが、営業の士気が下がった';}},
+    {t:'営業の肩を持つ', f:s=>{s.tmpSalesMod=1.3; s.quality-=5; return '今月の売りは伸びるが、無理な約束が増えた';}},
+    {t:'全員で徹底的に話し合う', f:s=>{s.morale+=6; return '時間はかかったが、チームの結束が強まった';}},
+  ]},
+];
+
+// ============ ゲーム状態 ============
+let S = null;          // state
+let toastLog = [];     // 月内に発生したログ
+let selInd = null, selCard = null;
+
+function newGame(ind){
+  toastLog = [];
+  S = {
+    ind: {...ind},
+    month: 1,
+    cash: 3000,            // 万円
+    customers: 12,
+    arpu: ind.arpu,
+    quality: 50, morale: 70, buzz: 10, trust: 20,
+    emp: {eng:1, sales:1, corp:0},
+    salary: 55,            // 万円/人月
+    equity: 1.0,           // 持株比率
+    stage: 0,              // 0:未調達 1:Seed 2:A 3:B 4:C
+    market: 1,             // 0:不況 1:普通 2:好況
+    marketTimer: ri(4,9),
+    mrr: 0, lastMrr: 0,
+    ipoPrep: -1,           // -1:未着手 / 0以上:残り月数
+    bridgeUsed: false,
+    alloc: {dev:3, sales:3, hire:0, corp:1},
+    history: [],           // 評価額の推移
+    log: [],
+  };
+  S.mrr = revenue();
+}
+
+const STAGE_NAMES = ['未調達','シード','シリーズA','シリーズB','シリーズC'];
+const MARKETS = [
+  {nm:'🌧 不況', mul:.6, col:'var(--red)'},
+  {nm:'⛅ 普通', mul:1.0, col:'var(--sub)'},
+  {nm:'☀️ 好況', mul:1.4, col:'var(--green)'},
+];
+
+function revenue(){ return S.customers * S.arpu * S.ind.margin; }
+function totalEmp(){ return S.emp.eng + S.emp.sales + S.emp.corp; }
+function ptCost(){ return Math.round(45 * (1 + S.month/36) * (1 + totalEmp()/25)); }
+function burn(){
+  const fixed = 80 + totalEmp() * S.salary;
+  const allocCost = (S.alloc.dev+S.alloc.sales+S.alloc.hire+S.alloc.corp) * ptCost();
+  return fixed + allocCost + (S.ipoPrep > 0 ? 300 : 0);
+}
+function growthRate(){ return S.lastMrr > 0 ? (S.mrr - S.lastMrr)/S.lastMrr : 0; }
+function valuation(){
+  const arr = S.mrr * 12;
+  const g = clamp(1 + growthRate()*4, .5, 2);
+  const b = 1 + S.buzz/150;
+  const v = arr * S.ind.multiple * MARKETS[S.market].mul * g * b;
+  return Math.max(v, 3000); // 最低3000万
+}
+function runway(){
+  const net = burn() - revenue();
+  return net <= 0 ? Infinity : Math.floor(S.cash / net);
+}
+
+function hire(n){
+  for(let i=0;i<n;i++){
+    const w = [S.alloc.dev+1, S.alloc.sales+1, S.alloc.corp+1];
+    const t = rnd(0, w[0]+w[1]+w[2]);
+    if(t < w[0]) S.emp.eng++; else if(t < w[0]+w[1]) S.emp.sales++; else S.emp.corp++;
+  }
+}
+
+// ============ 月末処理 ============
+function endOfMonth(){
+  const s = S;
+  if(s.ended) return;
+  s.tmpSalesMod = s.tmpSalesMod ?? 1; s.tmpRevMod = s.tmpRevMod ?? 1;
+  s.tmpChurnAdd = s.tmpChurnAdd ?? 0; s.tmpCostMod = s.tmpCostMod ?? 1;
+
+  // 施策カード適用
+  if(selCard !== null){
+    const c = s.curCards[selCard];
+    s.cash -= c.cost;
+    c.eff(s);
+    toastLog.push(`施策「${c.nm}」を実行`);
+  }
+
+  // 品質: 開発投資で上昇、放置で技術的負債
+  const devPow = s.alloc.dev * (1 + Math.sqrt(s.emp.eng)*.5);
+  s.quality += devPow*1.1 - 3 - s.customers/200;
+  s.quality = clamp(s.quality, 5, 100);
+
+  // 信用: コーポレート投資
+  s.trust += s.alloc.corp*1.5 - 1 + (s.emp.corp>0 ? 1 : 0);
+  s.trust = clamp(s.trust, 0, 100);
+
+  // モラール
+  s.morale += s.alloc.corp*.8 - 2 - (runway()<4 ? 5 : 0);
+  s.morale = clamp(s.morale, 0, 100);
+  if(s.morale < 30 && totalEmp() > 2 && Math.random() < .4){
+    const k = pick(['eng','sales','corp'].filter(t=>s.emp[t]>0));
+    s.emp[k]--; toastLog.push('<span class="dn">モラール低下で社員が退職した…</span>');
+  }
+
+  // 採用
+  if(s.alloc.hire > 0){
+    const got = Math.min(s.alloc.hire, ri(0, s.alloc.hire) + (s.buzz>40?1:0));
+    if(got>0){ hire(got); toastLog.push(`社員を${got}人採用（計${totalEmp()}人）`); }
+  }
+
+  // 顧客増減
+  const salesPow = s.alloc.sales * (1 + Math.sqrt(s.emp.sales)*.6);
+  const newCust = (salesPow*1.1 + s.buzz/10) * (s.quality/62) * s.ind.growth
+                  * MARKETS[s.market].mul * s.tmpSalesMod * rnd(.8,1.2);
+  const churnRate = clamp(s.ind.churn + (55-s.quality)*.0012 + s.tmpChurnAdd, .004, .2);
+  const lost = s.customers * churnRate;
+  s.customers = Math.max(1, Math.round(s.customers + newCust - lost));
+
+  // 売上・コスト
+  s.lastMrr = s.mrr;
+  s.mrr = revenue() * s.tmpRevMod;
+  const cost = burn() * s.tmpCostMod;
+  s.cash += s.mrr - cost;
+
+  // バズ減衰
+  s.buzz = clamp(s.buzz*.88, 0, 100);
+
+  // 市況サイクル
+  if(--s.marketTimer <= 0){
+    const old = s.market;
+    s.market = clamp(s.market + (Math.random()<.5?-1:1), 0, 2);
+    if(s.market===old) s.market = clamp(s.market + (Math.random()<.5?-1:1), 0, 2);
+    s.marketTimer = ri(4,10);
+    if(s.market!==old) toastLog.push(`市況が変化: <b>${MARKETS[s.market].nm}</b>`);
+  }
+
+  // IPO準備進行
+  if(s.ipoPrep > 0){
+    if(Math.random() < .08){
+      s.ipoPrep += 3; s.trust -= 5;
+      toastLog.push('<span class="dn">⚠️ 内部統制の不備が発覚！IPOが3ヶ月延期…</span>');
+    } else {
+      s.ipoPrep--;
+      toastLog.push(`IPO準備中… 残り${s.ipoPrep}ヶ月`);
+    }
+    if(s.ipoPrep <= 0){ doIPO(); return; }
+  }
+
+  // 一時効果リセット
+  s.tmpSalesMod = s.tmpRevMod = s.tmpCostMod = 1; s.tmpChurnAdd = 0;
+
+  s.history.push(valuation());
+  s.month++;
+
+  // 倒産チェック
+  if(s.cash < 0){
+    if(!s.bridgeUsed && s.stage > 0){ offerBridge(); return; }
+    gameOver('bankrupt'); return;
+  }
+
+  // 10年で強制終了
+  if(s.month > 120){ gameOver('timeout'); return; }
+
+  // M&Aオファー判定
+  if(s.buzz > 30 && s.mrr > 80 && Math.random() < .13){ offerMA(); return; }
+
+  startMonth();
+}
+
+// ============ 月初処理 ============
+function startMonth(){
+  selCard = null;
+  S.curCards = [];
+  const pool = [...CARD_POOL];
+  for(let i=0;i<3;i++) S.curCards.push(pool.splice(ri(0,pool.length-1),1)[0]);
+  render();
+  if(toastLog.length){
+    showModal(`📰 ${S.month-1>0? S.month-1+'ヶ月目の結果' : '結果'}`,
+      `<div class="log">${toastLog.map(l=>'・'+l).join('<br>')}</div>`,
+      [{t:'OK', f:closeModal}]);
+    toastLog = [];
+  }
+  // ランダムイベント（40%）
+  else if(S.month > 2 && Math.random() < .4){ fireEvent(); }
+}
+
+function fireEvent(){
+  const ev = pick(EVENTS);
+  showModal('⚡ ' + ev.nm, `<p>${ev.ds}</p>`,
+    ev.ch.map(c => ({t:c.t, f:()=>{
+      const msg = c.f(S);
+      showModal('結果', `<p>${msg}</p>`, [{t:'OK', f:closeModal}]);
+      render();
+    }})));
+}
+
+// ============ 資金調達 ============
+function fundOffers(){
+  const val = valuation();
+  const stage = S.stage + 1;
+  if(stage > 4) return null;
+  // 成長率が悪いと調達不可
+  const g = growthRate();
+  if(S.month > 6 && g < -.05) return 'rejected';
+  const mins = [0, 0, 30000, 100000, 500000]; // 各ラウンドの最低評価額(万円)
+  if(val < mins[stage]) return 'tooSmall';
+  const offers = [];
+  for(let i=0;i<2;i++){
+    const dil = clamp(rnd(.12,.22) - (S.buzz/500) - (g>0.1?.02:0) + (S.market===0?.05:0), .08, .3);
+    const amount = val * dil / (1-dil);
+    offers.push({
+      vc: pick(['ホシノキャピタル','グロースX','フューチャー創業基金','レッドサークル','ながれぼしVC','ツガルベンチャーズ']),
+      amount: Math.round(amount), dil,
+      perk: pick([
+        {t:'採用支援が得意（次月から採用効率+）', f:s=>s.buzz+=5},
+        {t:'PRに強い（バズ+10）', f:s=>s.buzz+=10},
+        {t:'管理体制の構築支援（信用+8）', f:s=>s.trust+=8},
+        {t:'ハンズオフ（特典なし・希薄化少なめ）', f:s=>{}, dilBonus:-.03},
+      ]),
+    });
+    if(offers[i].perk.dilBonus) offers[i].dil = clamp(offers[i].dil + offers[i].perk.dilBonus, .06, .3);
+  }
+  return offers;
+}
+
+function openFunding(){
+  const o = fundOffers();
+  const val = valuation();
+  if(o === null){ showModal('🏦 資金調達', '<p>シリーズCまで調達済み。あとはイグジットあるのみ！</p>', [{t:'閉じる', f:closeModal}]); return; }
+  if(o === 'rejected'){ showModal('🏦 資金調達', '<p>「成長率がマイナスですね…」どのVCにも断られてしまった。売上を立て直そう。</p>', [{t:'閉じる', f:closeModal}]); return; }
+  if(o === 'tooSmall'){ showModal('🏦 資金調達', `<p>${STAGE_NAMES[S.stage+1]}ラウンドには評価額が足りない。<br>現在の評価額: <b>${fmt(val)}</b></p>`, [{t:'閉じる', f:closeModal}]); return; }
+  const body = `<p>${STAGE_NAMES[S.stage+1]}ラウンド ／ 評価額 <b>${fmt(val)}</b></p>` +
+    o.map((x,i)=>`<div class="panel">
+      <b>${x.vc}</b><br>
+      <span class="log">調達額: <b class="up">${fmt(x.amount)}</b> ／ 希薄化: <b class="dn">-${(x.dil*100).toFixed(0)}%</b><br>${x.perk.t}</span>
+      <button class="btn" data-fund="${i}">この条件で調達</button>
+    </div>`).join('');
+  showModal('🏦 資金調達', body, [{t:'やめておく', f:closeModal, sub:true}]);
+  document.querySelectorAll('[data-fund]').forEach(b=>{
+    b.onclick = ()=>{
+      const x = o[+b.dataset.fund];
+      S.cash += x.amount;
+      S.equity *= (1 - x.dil);
+      S.stage++;
+      x.perk.f(S);
+      toastLog.push(`<b>${STAGE_NAMES[S.stage]}ラウンド完了！</b> ${fmt(x.amount)}調達（持株 ${(S.equity*100).toFixed(1)}%に）`);
+      showModal('🎉 調達成功！', `<p>${x.vc}から${fmt(x.amount)}を調達した。<br>あなたの持株比率: <b>${(S.equity*100).toFixed(1)}%</b></p>`, [{t:'OK', f:()=>{closeModal(); render();}}]);
+    };
+  });
+}
+
+// 緊急ブリッジ融資（倒産回避・1回のみ）
+function offerBridge(){
+  showModal('🚨 資金ショート寸前！', `<p>キャッシュが尽きた。既存投資家が救済を提示している:<br><b>${fmt(2000)}の緊急調達（持株が25%希薄化）</b></p>`, [
+    {t:'受ける（生き残る）', f:()=>{ S.cash += 2000; S.equity *= .75; S.bridgeUsed = true; S.morale -= 10; closeModal(); startMonth(); }},
+    {t:'断る（倒産）', f:()=>{ closeModal(); gameOver('bankrupt'); }, sub:true},
+  ]);
+}
+
+// ============ M&A ============
+function offerMA(){
+  const val = valuation();
+  const mult = rnd(.7, 1.5);
+  const price = val * mult;
+  const buyer = pick(['大手IT企業メガホールディングス','外資系テックジャイアント','老舗商社デジタル部門','メガバンク系CVC','大手通信キャリア']);
+  showModal('💼 買収オファー！', `<p><b>${buyer}</b>から買収提案が届いた。<br><br>
+    提示額: <b style="font-size:20px;color:var(--yellow)">${fmt(price)}</b><br>
+    （現在の評価額 ${fmt(val)} の ${mult.toFixed(2)}倍）<br><br>
+    あなたの取り分: <b class="up">${fmt(price*S.equity)}</b>（持株 ${(S.equity*100).toFixed(1)}%）</p>`, [
+    {t:'売却する（イグジット！）', f:()=>{ closeModal(); gameOver('ma', price, buyer); }},
+    {t:'断って成長を続ける', f:()=>{ S.buzz += 5; toastLog.push(`${buyer}の買収提案を蹴った。市場がざわつく（バズ+）`); closeModal(); startMonth(); }, sub:true},
+  ]);
+}
+
+// ============ IPO ============
+function ipoCheck(){
+  const arr = S.mrr*12;
+  const reqs = [
+    {ok: arr >= 30000, t:`年間売上 3億円以上（現在 ${fmt(arr)}）`},
+    {ok: S.trust >= 60, t:`信用度 60以上（現在 ${Math.round(S.trust)}）`},
+    {ok: growthRate() > .02 || S.mrr > burn(), t:'月次成長率 +2%超 or 黒字'},
+    {ok: S.stage >= 2, t:'シリーズA以降の調達実績'},
+  ];
+  return reqs;
+}
+function openIPO(){
+  if(S.ipoPrep > 0){ showModal('📈 IPO準備中', `<p>残り <b>${S.ipoPrep}ヶ月</b>。監査対応で毎月300万円の追加コストが発生中。</p>`, [{t:'閉じる', f:closeModal}]); return; }
+  const reqs = ipoCheck();
+  const allOk = reqs.every(r=>r.ok);
+  const body = `<p>IPO（上場）には12ヶ月の準備期間と、以下の条件が必要:</p>
+    <div class="log">${reqs.map(r=>(r.ok?'✅ ':'❌ ')+r.t).join('<br>')}</div>
+    <p style="margin-top:10px">準備中は毎月300万円の追加コスト。途中で不祥事が起きると延期されることも…</p>`;
+  showModal('📈 IPO準備', body, allOk
+    ? [{t:'IPO準備を開始する！', f:()=>{ S.ipoPrep = 12; closeModal(); render(); }}, {t:'まだ早い', f:closeModal, sub:true}]
+    : [{t:'閉じる', f:closeModal}]);
+}
+function doIPO(){
+  const price = valuation() * rnd(1.1, 1.6) * MARKETS[S.market].mul;
+  gameOver('ipo', price);
+}
+
+// ============ ゲーム終了 ============
+function gameOver(type, price=0, buyer=''){
+  S.ended = true;
+  $('#scrMain').classList.remove('active');
+  $('#scrResult').classList.add('active');
+  closeModal();
+  const my = price * S.equity;
+  const years = Math.floor(S.month/12), months = S.month%12;
+  let title, rank, scoreTxt, log;
+  if(type==='bankrupt'){
+    title='💸 倒産…'; rank='GAME OVER'; scoreTxt='資金が尽きた';
+    log=`${years}年${months}ヶ月の挑戦だった。失敗は次の起業の糧になる。`;
+  } else if(type==='timeout'){
+    title='🏢 10年経過'; rank='老舗ベンチャー'; scoreTxt='イグジットならず';
+    log=`上場も売却もないまま10年。それも一つの経営だが、今回はスコアなし。`;
+  } else {
+    title = type==='ipo' ? '🔔 IPO達成！' : '🤝 M&A成立！';
+    rank = my>=100000 ? '🦄 ユニコーン級' : my>=30000 ? '👑 メガベンチャー' : my>=10000 ? '🏆 グッドイグジット' : my>=3000 ? '✨ スモールイグジット' : '🌱 マイクロイグジット';
+    scoreTxt = `あなたの取り分: ${fmt(my)}`;
+    log = (type==='ipo' ? `時価総額 <b>${fmt(price)}</b> で東証グロース市場に上場！` : `<b>${buyer}</b>に <b>${fmt(price)}</b> で会社を売却！`)
+      + `<br>持株比率 ${(S.equity*100).toFixed(1)}% ／ 創業から${years}年${months}ヶ月`
+      + `<br>業種: ${S.ind.ic} ${S.ind.nm} ／ 最終ステージ: ${STAGE_NAMES[S.stage]}`
+      + `<br>社員数: ${totalEmp()}人 ／ 顧客数: ${S.customers.toLocaleString()}社`;
+  }
+  $('#resultTitle').textContent = title;
+  $('#resultRank').textContent = rank;
+  $('#resultScore').textContent = scoreTxt;
+  $('#resultLog').innerHTML = log;
+  drawChart();
+}
+
+function drawChart(){
+  const cv = $('#chart'), ctx = cv.getContext('2d');
+  const h = S.history; if(h.length<2){cv.style.display='none'; return;}
+  const W=cv.width, H=cv.height, max=Math.max(...h)*1.1;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#4f8cff'; ctx.lineWidth=2.5; ctx.beginPath();
+  h.forEach((v,i)=>{ const x=20+(W-40)*i/(h.length-1), y=H-15-(H-35)*v/max; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+  ctx.stroke();
+  ctx.fillStyle='#8fa0bf'; ctx.font='11px sans-serif';
+  ctx.fillText('企業評価額の推移 (最高 '+fmt(max/1.1)+')', 20, 14);
+}
+
+// ============ モーダル ============
+function showModal(title, body, buttons){
+  $('#modal').innerHTML = `<h3>${title}</h3>${body}` +
+    buttons.map((b,i)=>`<button class="btn ${b.sub?'sub':''}" data-mb="${i}">${b.t}</button>`).join('');
+  document.querySelectorAll('[data-mb]').forEach(el=> el.onclick = ()=> buttons[+el.dataset.mb].f());
+  $('#overlay').classList.add('show');
+}
+function closeModal(){ $('#overlay').classList.remove('show'); }
+
+// ============ 描画 ============
+const ALLOC_DEFS = [
+  {k:'dev',   nm:'🛠 開発',   sm:'品質が上がる。放置すると負債で低下'},
+  {k:'sales', nm:'📣 営業・マーケ', sm:'新規顧客を獲得する'},
+  {k:'hire',  nm:'🧑‍💼 採用',   sm:'社員を増やして効果を増幅'},
+  {k:'corp',  nm:'🏛 管理部門', sm:'信用とモラールを保つ。IPOに必須'},
+];
+const MAX_PTS = 10;
+
+function render(){
+  const s = S;
+  $('#monthLabel').textContent = `${Math.floor((s.month-1)/12)+1}年目 ${((s.month-1)%12)+1}月（${s.month}ヶ月目）`;
+  const m = MARKETS[s.market];
+  $('#marketBadge').textContent = m.nm; $('#marketBadge').style.color = m.col;
+
+  const rw = runway();
+  const kpis = [
+    {l:'キャッシュ', v:fmt(s.cash), c: s.cash<burn()*3 ? 'bad' : ''},
+    {l:'月次売上', v:fmt(s.mrr), c:'good'},
+    {l:'月次支出', v:fmt(burn()), c:''},
+    {l:'評価額', v:fmt(valuation()), c:'warn'},
+    {l:'持株比率', v:(s.equity*100).toFixed(1)+'%', c:''},
+    {l:'ランウェイ', v: rw===Infinity?'黒字✨':rw+'ヶ月', c: rw<4?'bad':rw<7?'warn':''},
+    {l:'顧客数', v:s.customers.toLocaleString(), c:''},
+    {l:'社員', v:totalEmp()+'人', c:''},
+    {l:'ステージ', v:STAGE_NAMES[s.stage], c:''},
+  ];
+  $('#kpi').innerHTML = kpis.map(k=>`<div class="kcell"><div class="l">${k.l}</div><div class="v ${k.c}">${k.v}</div></div>`).join('');
+
+  const stats = [
+    {l:'品質', v:s.quality, col:'#4f8cff'}, {l:'モラール', v:s.morale, col:'#3ddc84'},
+    {l:'バズ', v:s.buzz, col:'#ffd166'}, {l:'信用', v:s.trust, col:'#b388ff'},
+    {l:'IPO', v: s.ipoPrep>0 ? (12-s.ipoPrep)/12*100 : 0, col:'#ff5d6c'},
+  ];
+  $('#stats').innerHTML = stats.map(x=>`<div class="stat"><div class="sl">${x.l} ${Math.round(x.v)}</div><div class="bar"><i style="width:${clamp(x.v,0,100)}%;background:${x.col}"></i></div></div>`).join('');
+
+  $('#cards').innerHTML = s.curCards.map((c,i)=>`<div class="card ${selCard===i?'sel':''}" data-card="${i}">
+    <div class="cn">${c.nm}</div><div class="ce">${c.ce}</div>
+    <div class="cc">${c.cost>0?'費用: '+fmt(c.cost):'費用なし'}</div></div>`).join('');
+  document.querySelectorAll('[data-card]').forEach(el=> el.onclick = ()=>{ selCard = selCard===+el.dataset.card ? null : +el.dataset.card; render(); });
+
+  $('#ptCost').textContent = fmt(ptCost());
+  const used = ALLOC_DEFS.reduce((a,d)=>a+s.alloc[d.k],0);
+  $('#ptsLeft').textContent = `残りポイント: ${MAX_PTS-used} / ${MAX_PTS}`;
+  $('#allocs').innerHTML = ALLOC_DEFS.map(d=>`<div class="alloc">
+    <div class="an">${d.nm}<small>${d.sm}</small></div>
+    <button data-dec="${d.k}">−</button><div class="pv">${s.alloc[d.k]}</div><button data-inc="${d.k}">＋</button>
+  </div>`).join('');
+  document.querySelectorAll('[data-dec]').forEach(el=> el.onclick = ()=>{ if(s.alloc[el.dataset.dec]>0){s.alloc[el.dataset.dec]--; render();} });
+  document.querySelectorAll('[data-inc]').forEach(el=> el.onclick = ()=>{ if(used<MAX_PTS){s.alloc[el.dataset.inc]++; render();} });
+
+  $('#btnIPO').textContent = s.ipoPrep>0 ? `📈 IPO準備中(残${s.ipoPrep}ヶ月)` : '📈 IPO準備';
+}
+
+// ============ 初期化 ============
+$('#indList').innerHTML = INDUSTRIES.map((x,i)=>`<div class="ind" data-ind="${i}">
+  <div class="ic">${x.ic}</div><div><div class="nm">${x.nm}</div><div class="ds">${x.ds}</div></div></div>`).join('');
+document.querySelectorAll('[data-ind]').forEach(el=> el.onclick = ()=>{
+  selInd = +el.dataset.ind;
+  document.querySelectorAll('.ind').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+  $('#btnStart').disabled = false;
+});
+$('#btnStart').onclick = ()=>{
+  newGame(INDUSTRIES[selInd]);
+  $('#scrTitle').classList.remove('active');
+  $('#scrMain').classList.add('active');
+  startMonth();
+};
+$('#btnNext').onclick = ()=>{
+  if(S.cash < burn() - S.mrr && runway() <= 1){
+    // そのまま進めるが警告のみ（演出として倒産処理は月末で）
+  }
+  endOfMonth();
+};
+$('#btnFund').onclick = openFunding;
+$('#btnIPO').onclick = openIPO;
+</script>
+</body>
+</html>
