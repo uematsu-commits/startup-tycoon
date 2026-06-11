@@ -257,6 +257,8 @@ const playerId = (()=>{ try{
 }catch(e){ return 'anon'; } })();
 function track(event, data={}){
   if(!sessionId) return;
+  // ローカルでの動作確認は計測しない（本番データへのテスト混入防止）
+  if(location.hostname === 'localhost' || location.hostname === '127.0.0.1') return;
   try{
     fetch(SB_URL + '/rest/v1/tycoon_events', {
       method:'POST', keepalive:true,
